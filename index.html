@@ -152,6 +152,7 @@ async function loadTrades() {
 }
 const tradeById = (id) => TRADES.find((t) => t.id === id) || TRADES.find((t) => t.id === "generico") || TRADES[0];
 const TR = () => tradeById((typeof S !== "undefined" && S.p && S.p.companies && S.p.companies.trade) || ls0("trade_pick") || "generico");
+const EX = (k, i, d) => ((TR()[k] || [])[i] || d);   // esempio preso dal mestiere
 const MOD = (k) => (TR().modules || {})[k] !== false;
 function tradeGrid(onPick, cur) {
   return h("div", { class: "grid" }, [...TRADES].sort((a, b) => (a.sort || 50) - (b.sort || 50)).map((t) =>
@@ -793,7 +794,7 @@ async function reportForm(sub) {
   const loadBolle = async () => { const jid = $("r_job") && $("r_job").value; bolle = jid && !jid.startsWith("client:") ? chk(await sb.from("documents").select("id,title,doc_date").eq("job_id", jid).eq("kind", "bolla").order("created_at", { ascending: false })) : []; drawMats(); };
   const drawMats = () => {
     matBox.replaceChildren(...mats.map((m, i) => h("div", { class: "card", style: "padding:10px 12px" },
-      h("input", { value: m.desc || "", placeholder: "Materiale (es. cavo 3x1.5)", oninput: (e) => { m.desc = e.target.value; stash(); } }),
+      h("input", { value: m.desc || "", placeholder: "Materiale (es. " + EX("materials", 0, "viti") + ")", oninput: (e) => { m.desc = e.target.value; stash(); } }),
       h("div", { class: "sp", style: "margin-top:8px" },
         h("input", { type: "number", inputmode: "decimal", step: "any", placeholder: "Quantità", value: m.qty != null ? m.qty : "", oninput: (e) => { m.qty = numOrNull(e.target.value); stash(); } }),
         h("input", { placeholder: "Unità", value: m.unit || "", oninput: (e) => { m.unit = e.target.value; stash(); } })),
@@ -857,7 +858,7 @@ async function reportForm(sub) {
     h("label", {}, "Chi ha fatto il lavoro"),
     tm.length ? h("div", { class: "chips" }, tm.map((t) => { const b = h("button", { class: "chip" + (withSet.has(t.id) ? " on" : ""), onclick: () => { if (withSet.has(t.id)) withSet.delete(t.id); else withSet.add(t.id); b.className = "chip" + (withSet.has(t.id) ? " on" : ""); stash(); } }, t.full_name); return b; })) : h("p", { class: "muted" }, "Nessun collega."),
     h("label", { for: "r_back" }, "↩️ Devo tornare per… (facoltativo)"),
-    h("textarea", { id: "r_back", rows: "3", oninput: () => { backTouched = true; }, placeholder: "Es. portare il motore del cancello 2, impostare gli orari. Si aggiorna anche nel lavoro." }, backInit),
+    h("textarea", { id: "r_back", rows: "3", oninput: () => { backTouched = true; }, placeholder: "Es. cosa resta da fare, cosa portare la prossima volta. Si aggiorna anche nel lavoro." }, backInit),
     (() => {
       const bf = { get value() { return $("r_back").value; }, set value(v) { $("r_back").value = v; } };
       const m = micButton(bf, () => { backTouched = true; });
@@ -877,7 +878,7 @@ async function reportForm(sub) {
     })(),
     h("div", { class: "muted", style: "font-size:13px;margin:2px 0 4px" }, "Se non resta più niente da fare, lascia vuoto: nel lavoro sparisce l'avviso «Da tornare»."),
     h("label", { for: "r_miss" }, "🛒 Materiale che manca (facoltativo)"),
-    h("textarea", { id: "r_miss", rows: "3", oninput: () => { missTouched = true; }, placeholder: "Es. 20 m cavo 3x1,5, 2 prese bticino, motore cancello. Si aggiorna anche nel lavoro e nella lista «Materiale che manca»." }, missInit),
+    h("textarea", { id: "r_miss", rows: "3", oninput: () => { missTouched = true; }, placeholder: "Es. 2 pz " + EX("materials", 0, "viti") + ", 1 pz " + EX("materials", 1, "silicone") + ". Si aggiorna anche nel lavoro e nella lista «Materiale che manca»." }, missInit),
     (() => {
       const mf = { get value() { return $("r_miss").value; }, set value(v) { $("r_miss").value = v; } };
       const m = micButton(mf, () => { missTouched = true; });
@@ -1006,7 +1007,7 @@ async function backupView() {
     btn.disabled = false; btn.textContent = "💾 Crea backup e salva";
   };
   return [h("h1", {}, "💾 Backup"),
-    h("div", { class: "card" }, h("p", { style: "margin-top:0" }, "Crea un file con tutti i dati: clienti, lavori, rapportini, ore, impianti, fatture, spese, mezzi, chat."), btn, st,
+    h("div", { class: "card" }, h("p", { style: "margin-top:0" }, "Crea un file con tutti i dati: clienti, lavori, rapportini, ore, schede, fatture, spese, mezzi, chat."), btn, st,
       h("p", { class: "muted" }, "Quando si apre il menu di condivisione scegli Drive e poi una cartella. Se non si apre, il file va nei Download.")),
     h("p", { class: "muted" }, "Le foto e i PDF non sono dentro il file: restano nell'archivio online dell'app. Fai un backup almeno una volta a settimana.")];
 }
@@ -1052,7 +1053,7 @@ async function urgentForm() {
     h("label", { for: "u_c" }, "Cliente"), h("select", { id: "u_c" }, h("option", { value: "" }, "— nessuno —"), clientsL.map((c) => h("option", { value: c.id }, c.name))),
     h("label", { for: "u_cn" }, "Oppure scrivi il nome di un cliente nuovo"), h("input", { id: "u_cn", placeholder: "Es. Mario Rossi — viene salvato tra i clienti" }),
     h("label", { for: "u_ad" }, "Indirizzo (facoltativo)"), h("input", { id: "u_ad", placeholder: "Via, numero, città" }),
-    h("label", { for: "u_w" }, "Che intervento è"), h("input", { id: "u_w", placeholder: "Es. Cancello bloccato, quadro saltato" }),
+    h("label", { for: "u_w" }, "Che intervento è"), h("input", { id: "u_w", placeholder: "Es. " + EX("jobs", 1, "Guasto") }),
     h("label", { for: "u_done" }, "Cosa hai fatto"), h("textarea", { id: "u_done", rows: "5", placeholder: "Scrivi o detta a voce 🎤" }),
     h("div", { style: "display:flex;gap:10px;margin-top:8px" }, mic.btn), mic.st,
     h("label", { for: "u_day" }, "Giorno"), h("input", { id: "u_day", type: "date", value: isoDay(new Date()) }),
@@ -1219,7 +1220,7 @@ async function libForm(sub) {
   const say = h("p", { class: "muted" });
   let cats = [...LIB_CATS_F()];
   try { for (const x of chk(await sb.from("library").select("category"))) if (x.category && !cats.includes(x.category)) cats.push(x.category); } catch { /* resta l'elenco base */ }
-  const curC = r.category || S.libNewCat || "Centraline"; S.libNewCat = "";
+  const curC = r.category || S.libNewCat || LIB_CATS_F()[0]; S.libNewCat = "";
   if (!cats.includes(curC)) cats.push(curC);
   const newC = h("input", { id: "l_cn", placeholder: "Nome della nuova categoria", style: "display:none;margin-top:8px" });
   const selC = h("select", { id: "l_c", onchange: () => { newC.style.display = selC.value === "__new" ? "block" : "none"; if (selC.value === "__new") newC.focus(); } },
@@ -1269,7 +1270,7 @@ async function libForm(sub) {
   return [h("h1", {}, sub.id ? "Scheda" : "Nuova scheda"),
     h("label", { for: "l_c" }, "Categoria"), selC, newC,
     h("div", { class: "sp" }, h("div", {}, h("label", { for: "l_b" }, "Marca"), h("input", { id: "l_b", value: r.brand || "" })), h("div", {}, h("label", { for: "l_m" }, "Modello"), h("input", { id: "l_m", value: r.model || "" }))),
-    h("label", { for: "l_t" }, "Titolo"), h("input", { id: "l_t", value: r.title || "", placeholder: "Es. Centralina cancello Came" }),
+    h("label", { for: "l_t" }, "Titolo"), h("input", { id: "l_t", value: r.title || "", placeholder: "Es. Manuale " + EX("libCats", 0, "attrezzatura").toLowerCase() }),
     h("h2", {}, "📖 Istruzioni"), ph, h("div", { style: "margin-top:8px" }, ph2), pick, cam, say, box,
     r.file_path ? h("div", {}, h("a", { class: "link", href: "#", onclick: (e) => { e.preventDefault(); openDoc({ file_path: r.file_path }); } }, "📄 Apri il file caricato in precedenza")) : null,
     h("label", { for: "l_n" }, "Note tue (trucchi, errori comuni…)"), h("textarea", { id: "l_n", rows: "4" }, P.head),
@@ -1294,11 +1295,11 @@ async function assetsView() {
 async function assetForm(sub) {
   const [a, clients] = await Promise.all([sub.id ? sb.from("assets").select("*").eq("id", sub.id).single().then(chk) : Promise.resolve({}), sb.from("clients").select("id,name").order("name").then(chk)]);
   const sec = h("input", { id: "a_s", type: "password", value: a.secret || "", autocomplete: "off" });
-  return [h("h1", {}, sub.id ? "Impianto" : "Nuovo impianto"),
+  return [h("h1", {}, sub.id ? "Scheda" : "Nuova scheda"),
     h("div", { class: "note", style: "margin-top:0" }, "Attenzione: tutto quello che scrivi qui è visibile a tutti i colleghi dell'azienda."),
-    h("label", { for: "a_t" }, "Nome impianto"), h("input", { id: "a_t", value: a.title || "", placeholder: "Es. Villa Rossi – Home Assistant" }),
+    h("label", { for: "a_t" }, "Nome"), h("input", { id: "a_t", value: a.title || "", placeholder: "Es. Casa Rossi" }),
     h("label", { for: "a_c" }, "Cliente"), h("select", { id: "a_c" }, h("option", { value: "" }, "— nessuno —"), clients.map((c) => h("option", { value: c.id, selected: a.client_id === c.id }, c.name))),
-    h("label", { for: "a_u" }, "Indirizzo / IP / link di accesso"), h("input", { id: "a_u", value: a.address_url || "", placeholder: "http://192.168.1.10:8123" }),
+    h("label", { for: "a_u" }, "Indirizzo / IP / link di accesso"), h("input", { id: "a_u", value: a.address_url || "", placeholder: "Es. link, indirizzo o codice" }),
     h("label", { for: "a_n" }, "Utente"), h("input", { id: "a_n", value: a.username || "", autocomplete: "off" }),
     h("label", { for: "a_s" }, "Password"), sec, h("button", { class: "ghost", onclick: (e) => { sec.type = sec.type === "password" ? "text" : "password"; e.target.textContent = sec.type === "password" ? "Mostra password" : "Nascondi password"; } }, "Mostra password"),
     h("label", { for: "a_o" }, "Note (dispositivi, configurazione, cose da ricordare)"), h("textarea", { id: "a_o", rows: "6" }, a.notes || ""),
@@ -1349,7 +1350,7 @@ async function warrForm(sub) {
   const [w, clients] = await Promise.all([sub.id ? sb.from("warranties").select("*").eq("id", sub.id).single().then(chk) : Promise.resolve({}), sb.from("clients").select("id,name").order("name").then(chk)]);
   return [h("h1", {}, sub.id ? "Scadenza" : "Nuova scadenza"),
     h("label", { for: "w_k" }, "Tipo"), h("select", { id: "w_k" }, [["manutenzione", "Manutenzione"], ["garanzia", "Garanzia"]].map(([k, l]) => h("option", { value: k, selected: (w.kind || "manutenzione") === k }, l))),
-    h("label", { for: "w_t" }, "Cosa"), h("input", { id: "w_t", value: w.title || "", placeholder: "Es. Controllo impianto allarme" }),
+    h("label", { for: "w_t" }, "Cosa"), h("input", { id: "w_t", value: w.title || "", placeholder: "Es. Manutenzione annuale" }),
     h("label", { for: "w_c" }, "Cliente"), h("select", { id: "w_c" }, h("option", { value: "" }, "— nessuno —"), clients.map((c) => h("option", { value: c.id, selected: w.client_id === c.id }, c.name))),
     h("label", { for: "w_d" }, "Scadenza"), h("input", { id: "w_d", type: "date", value: w.due_date || "" }),
     h("label", { for: "w_n" }, "Note"), h("textarea", { id: "w_n", rows: "3" }, w.notes || ""),
@@ -2349,7 +2350,7 @@ async function jobView(id) {
         (OWNER() || m.added_by === S.p.id) ? h("button", { class: "ghost", style: "margin-left:10px", "aria-label": "Elimina", onclick: reloadAfter(async () => { chk(await sb.from("job_materials").delete().eq("id", m.id)); }) }, "✕") : null)))) : h("p", {}, "Nessun materiale registrato."),
     h("div", { class: "card" },
       h("label", { for: "md", style: "margin-top:0" }, "Aggiungi materiale"),
-      h("input", { id: "md", placeholder: "Es. Cavo 3x1.5" }),
+      h("input", { id: "md", placeholder: "Es. " + EX("materials", 0, "Viti") }),
       h("div", { class: "sp", style: "margin-top:8px" }, h("input", { id: "mq", type: "number", inputmode: "decimal", step: "any", placeholder: "Quantità" }), h("input", { id: "mu", placeholder: "Unità (m, pz…)" })),
       h("button", { class: "secondary", style: "width:100%;margin-top:10px", onclick: reloadAfter(async () => {
         const description = $("md").value.trim(); if (!description) throw new Error("Scrivi cosa hai usato");
@@ -3598,7 +3599,7 @@ async function quoteForm(id) {
   return [
     h("h1", {}, q ? "Modifica preventivo" : "Nuovo preventivo"),
     h("label", { for: "q_num" }, "Numero"), h("input", { id: "q_num", value: number }),
-    h("label", { for: "q_title" }, "Oggetto"), h("input", { id: "q_title", value: q?.title || "", placeholder: "Es. Impianto domotico villa" }),
+    h("label", { for: "q_title" }, "Oggetto"), h("input", { id: "q_title", value: q?.title || "", placeholder: "Es. " + EX("jobs", 0, "Sopralluogo") }),
     h("label", { for: "q_cl" }, "Cliente"), h("select", { id: "q_cl" }, h("option", { value: "" }, "— nessuno —"), clients.map((c) => h("option", { value: c.id, selected: q?.client_id === c.id }, c.name))),
     h("label", { for: "q_new" }, "Oppure nuovo cliente (solo nome)"), h("input", { id: "q_new" }),
     h("div", { class: "sp" }, h("div", {}, h("label", { for: "q_date" }, "Data"), h("input", { id: "q_date", type: "date", value: q?.quote_date || isoDay(new Date()) })),
