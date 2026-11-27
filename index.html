@@ -3936,11 +3936,41 @@ const APP_NEWS = [
 function infoView() {
   return [
     h("h1", {}, "Info sull'app"),
-    h("div", { class: "card" }, h("strong", {}, "Gestione aziendale"), h("div", { class: "muted" }, "Lavori, clienti, agenda, documenti, ore e ufficio in un'unica app per l'azienda."),
-      h("div", { class: "muted", style: "margin-top:6px" }, "Versione: " + APP_VERSION)),
+    h("div", { class: "card" }, h("strong", {}, APP_NAME), h("div", { class: "muted" }, "Lavori, clienti, agenda, documenti, ore e ufficio in un'unica app per l'azienda."),
+      h("div", { class: "muted", style: "margin-top:6px" }, "Versione: " + APP_VERSION),
+      h("a", { href: "privacy.html", target: "_blank", style: "display:inline-block;margin-top:8px" }, "Privacy e trattamento dei dati")),
     h("h2", {}, "Ultime novità"),
-    APP_NEWS.map(([t, d]) => h("div", { class: "card" }, h("strong", {}, t), h("div", { class: "muted" }, d)))
+    APP_NEWS.map(([t, d]) => h("div", { class: "card" }, h("strong", {}, t), h("div", { class: "muted" }, d))),
+    h("h2", {}, "Il tuo account"),
+    h("div", { class: "card" },
+      h("div", { class: "muted" }, OWNER()
+        ? "Se elimini l'account cancelli anche l'azienda: lavori, clienti, documenti, foto e gli account dei dipendenti. Non si può annullare: fai prima un backup."
+        : "Se elimini l'account cancelli il tuo profilo, le tue ore, i rapportini e i messaggi. Non si può annullare."),
+      h("button", { class: "danger", style: "margin-top:10px", onclick: deleteAccount }, "Elimina il mio account"))
   ];
+}
+async function wipeFolder(prefix) {
+  const st = sb.storage.from("docs");
+  const { data } = await st.list(prefix, { limit: 1000 });
+  const files = [];
+  for (const it of data || []) {
+    const path = prefix + "/" + it.name;
+    if (it.id) files.push(path); else await wipeFolder(path);
+  }
+  if (files.length) await st.remove(files);
+}
+async function deleteAccount() {
+  const w = prompt("Per confermare scrivi ELIMINA");
+  if ((w || "").trim().toUpperCase() !== "ELIMINA") return;
+  const ok = await attempt(async () => {
+    if (OWNER() && S.p.company_id) { try { await wipeFolder(String(S.p.company_id)); } catch {} }
+    chk(await sb.rpc("delete_my_account"));
+  });
+  if (!ok) return;
+  try { localStorage.clear(); } catch {}
+  await sb.auth.signOut().catch(() => {});
+  alert("Account eliminato.");
+  location.reload();
 }
 const APP_VERSION = "0.1 di prova (27 novembre 2026)";
 

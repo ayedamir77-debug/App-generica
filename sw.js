@@ -2,7 +2,7 @@
 // Pagina e file dell'app: prima la rete (così gli aggiornamenti arrivano subito), se manca la rete usa la copia salvata.
 // Librerie esterne (Supabase, OCR, PDF): copia salvata, aggiornata in sottofondo.
 // Le chiamate ai dati (Supabase) non vengono mai salvate.
-const CACHE = 'cantiere-v2';
+const CACHE = 'cantiere-v3';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil((async () => {
   for (const k of await caches.keys()) if (k !== CACHE) await caches.delete(k);
