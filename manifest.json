@@ -1,6 +1,6 @@
 {
-  "name": "App Lavori",
-  "short_name": "App Lavori",
+  "name": "Cantiere in Tasca",
+  "short_name": "Cantiere",
   "description": "Lavori, clienti, documenti e squadra: si adatta al tuo mestiere",
   "start_url": "./",
   "scope": "./",

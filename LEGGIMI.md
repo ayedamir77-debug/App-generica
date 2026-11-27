@@ -1,4 +1,4 @@
-# App Lavori (versione generica, di prova)
+# Cantiere in Tasca (versione generica, di prova)
 
 Copia generica di Light Project, separata da quella della ditta.
 

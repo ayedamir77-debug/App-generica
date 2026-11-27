@@ -2,7 +2,7 @@
 // Pagina e file dell'app: prima la rete (così gli aggiornamenti arrivano subito), se manca la rete usa la copia salvata.
 // Librerie esterne (Supabase, OCR, PDF): copia salvata, aggiornata in sottofondo.
 // Le chiamate ai dati (Supabase) non vengono mai salvate.
-const CACHE = 'app-lavori-v1';
+const CACHE = 'cantiere-v2';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil((async () => {
   for (const k of await caches.keys()) if (k !== CACHE) await caches.delete(k);
@@ -38,7 +38,7 @@ const tipoDa = (u) => { try { return new URL(u, self.location.href).searchParams
 self.addEventListener('push', (e) => {
   let d = {}; try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data && e.data.text() }; }
   const t = tipoDa(d.url || ''), st = STILI[t] || {};
-  e.waitUntil(self.registration.showNotification(d.title || 'App Lavori', {
+  e.waitUntil(self.registration.showNotification(d.title || 'Cantiere in Tasca', {
     body: d.body || '', icon: 'icon-192.png', badge: 'badge-96.png', vibrate: st.vibrate, tag: st.tag, renotify: !!st.tag,
     actions: t ? [{ action: 'open', title: 'Apri' }] : [], data: { url: d.url || './', n: t }
   }));

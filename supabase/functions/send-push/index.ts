@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
       if (Array.isArray(body.to)) q = q.in("user_id", body.to.slice(0, 50));
       if (!body.includeSelf) q = q.neq("user_id", u.user.id);
       const { data: subs } = await q;
-      const payload = JSON.stringify({ title: String(body.title || "App Lavori").slice(0, 80), body: String(body.body || "").slice(0, 180), url: String(body.url || "./") });
+      const payload = JSON.stringify({ title: String(body.title || "Cantiere in Tasca").slice(0, 80), body: String(body.body || "").slice(0, 180), url: String(body.url || "./") });
       let sent = 0;
       await Promise.all((subs || []).map(async (s: { id: string; endpoint: string; p256dh: string; auth: string }) => {
         try {
